@@ -10,8 +10,7 @@ public class Generator3D : MonoBehaviour
     {
         None,
         Room,
-        Hallway,
-        Stairs
+        Hallway
     }
 
     class Room
@@ -43,8 +42,6 @@ public class Generator3D : MonoBehaviour
     Material redMaterial;
     [SerializeField]
     Material blueMaterial;
-    [SerializeField]
-    Material greenMaterial;
 
     Random random;
     Grid3D<CellType> grid;
@@ -181,11 +178,7 @@ public class Generator3D : MonoBehaviour
                     //flat hallway
                     pathCost.cost = Vector3Int.Distance(b.Position, endPos);    //heuristic
 
-                    if (grid[b.Position] == CellType.Stairs)
-                    {
-                        return pathCost;
-                    }
-                    else if (grid[b.Position] == CellType.Room)
+                    if (grid[b.Position] == CellType.Room)
                     {
                         pathCost.cost += 5;
                     }
@@ -198,34 +191,13 @@ public class Generator3D : MonoBehaviour
                 }
                 else
                 {
-                    //staircase
+                    //vertical hallway
                     if ((grid[a.Position] != CellType.None && grid[a.Position] != CellType.Hallway)
                         || (grid[b.Position] != CellType.None && grid[b.Position] != CellType.Hallway)) return pathCost;
 
                     pathCost.cost = 100 + Vector3Int.Distance(b.Position, endPos);    //base cost + heuristic
 
-                    int xDir = Mathf.Clamp(delta.x, -1, 1);
-                    int zDir = Mathf.Clamp(delta.z, -1, 1);
-                    Vector3Int verticalOffset = new Vector3Int(0, delta.y, 0);
-                    Vector3Int horizontalOffset = new Vector3Int(xDir, 0, zDir);
-
-                    if (!grid.InBounds(a.Position + verticalOffset)
-                        || !grid.InBounds(a.Position + horizontalOffset)
-                        || !grid.InBounds(a.Position + verticalOffset + horizontalOffset))
-                    {
-                        return pathCost;
-                    }
-
-                    if (grid[a.Position + horizontalOffset] != CellType.None
-                        || grid[a.Position + horizontalOffset * 2] != CellType.None
-                        || grid[a.Position + verticalOffset + horizontalOffset] != CellType.None
-                        || grid[a.Position + verticalOffset + horizontalOffset * 2] != CellType.None)
-                    {
-                        return pathCost;
-                    }
-
                     pathCost.traversable = true;
-                    pathCost.isStairs = true;
                 }
 
                 return pathCost;
@@ -250,20 +222,8 @@ public class Generator3D : MonoBehaviour
 
                         if (delta.y != 0)
                         {
-                            int xDir = Mathf.Clamp(delta.x, -1, 1);
-                            int zDir = Mathf.Clamp(delta.z, -1, 1);
-                            Vector3Int verticalOffset = new Vector3Int(0, delta.y, 0);
-                            Vector3Int horizontalOffset = new Vector3Int(xDir, 0, zDir);
-
-                            grid[prev + horizontalOffset] = CellType.Stairs;
-                            grid[prev + horizontalOffset * 2] = CellType.Stairs;
-                            grid[prev + verticalOffset + horizontalOffset] = CellType.Stairs;
-                            grid[prev + verticalOffset + horizontalOffset * 2] = CellType.Stairs;
-
-                            yield return StartCoroutine(PlaceStairs(prev + horizontalOffset));
-                            yield return StartCoroutine(PlaceStairs(prev + horizontalOffset * 2));
-                            yield return StartCoroutine(PlaceStairs(prev + verticalOffset + horizontalOffset));
-                            yield return StartCoroutine(PlaceStairs(prev + verticalOffset + horizontalOffset * 2));
+                            grid[prev + new Vector3Int(0, delta.y, 0)] = CellType.Hallway;
+                            yield return StartCoroutine(PlaceHallway(prev + new Vector3Int(0, delta.y, 0)));
                         }
 
                         Debug.DrawLine(prev + new Vector3(0.5f, 0.5f, 0.5f), current + new Vector3(0.5f, 0.5f, 0.5f), Color.blue, 100, false);
@@ -302,14 +262,6 @@ public class Generator3D : MonoBehaviour
     IEnumerator PlaceHallway(Vector3Int location)
     {
         yield return StartCoroutine(PlaceCube(location, new Vector3Int(1, 1, 1), blueMaterial));
-
-        // Wait 100ms
-        yield return new WaitForSeconds(0.1f);
-    }
-
-    IEnumerator PlaceStairs(Vector3Int location)
-    {
-        yield return StartCoroutine(PlaceCube(location, new Vector3Int(1, 1, 1), greenMaterial));
 
         // Wait 100ms
         yield return new WaitForSeconds(0.1f);
