@@ -176,7 +176,7 @@ public class Generator3D : MonoBehaviour
                 if (delta.y == 0)
                 {
                     //flat hallway
-                    pathCost.cost = Vector3Int.Distance(b.Position, endPos);    //heuristic
+                    pathCost.cost = ManhattanDistance(b.Position, endPos);    //heuristic
 
                     if (grid[b.Position] == CellType.Room)
                     {
@@ -195,7 +195,7 @@ public class Generator3D : MonoBehaviour
                     if ((grid[a.Position] != CellType.None && grid[a.Position] != CellType.Hallway)
                         || (grid[b.Position] != CellType.None && grid[b.Position] != CellType.Hallway)) return pathCost;
 
-                    pathCost.cost = 100 + Vector3Int.Distance(b.Position, endPos);    //base cost + heuristic
+                    pathCost.cost = 100 + ManhattanDistance(b.Position, endPos);    //base cost + heuristic
 
                     pathCost.traversable = true;
                 }
@@ -239,6 +239,11 @@ public class Generator3D : MonoBehaviour
                 }
             }
         }
+    }
+
+    int ManhattanDistance(Vector3Int a, Vector3Int b)
+    {
+        return Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y) + Mathf.Abs(a.z - b.z);
     }
 
     IEnumerator PlaceCube(Vector3Int location, Vector3Int size, Material material)
