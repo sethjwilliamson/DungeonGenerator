@@ -222,7 +222,7 @@ public class SimpleDungeonGenerator : MonoBehaviour
 
         // Visualize the Delaunay triangulation edges.
         foreach (RoomEdge edge in delaunayEdges)
-            VisualizeEdge(edge, false);
+            VisualizeEdge(edge, true);
     }
 
     bool RoomEdgeExists(List<RoomEdge> list, RoomEdge edge)
@@ -324,6 +324,7 @@ public class SimpleDungeonGenerator : MonoBehaviour
     IEnumerator DrawHallway(RoomExit exitA, RoomExit exitB)
     {
         List<Vector3Int> path = GetManhattanPath(exitA.position, exitB.position);
+        Vector3Int previousPos = path[0];
         for (int i = 1; i < path.Count - 1; i++)
         {
             Vector3Int pos = path[i];
@@ -333,8 +334,28 @@ public class SimpleDungeonGenerator : MonoBehaviour
                 dungeonGrid[pos.x, pos.y, pos.z] = hallway;
                 VisualizeHallway(pos);
             }
+
+            // Detect corners and create new edges
+            if (i > 1 && (pos.x != previousPos.x && pos.y != previousPos.y || pos.x != previousPos.x && pos.z != previousPos.z || pos.y != previousPos.y && pos.z != previousPos.z))
+            {
+                RoomEdge newEdge = new RoomEdge
+                {
+                    a = exitA.room,
+                    b = exitB.room,
+                    weight = ManhattanDistance(previousPos, pos),
+                    completed = false
+                };
+                if (!RoomEdgeExists(delaunayEdges, newEdge))
+                {
+                    delaunayEdges.Add(newEdge);
+                }
+            }
+            previousPos = pos;
         }
         yield return new WaitForSeconds(0.1f);
+
+        // Recalculate Delaunay triangulation
+        ComputeDelaunayEdges();
     }
 
     void VisualizeHallway(Vector3Int gridPos)
